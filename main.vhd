@@ -7,13 +7,17 @@ use ieee.std_logic_signed.all;
 entity main is
     generic(MemFileName     : string    := "rom.mif";
             MemDepth        : integer   := 16);
-    port(MemClock, PCClock, Reset, Run  : in    std_logic;
-         Done                           : out   std_logic;
-         BusWires                       : out   std_logic_vector(7 downto 0));
+    port(MemClock, PCClock, Reset, Run, SysClock    : in    std_logic;
+         Done                                       : out   std_logic;
+         BusWires                                   : out   std_logic_vector(7 downto 0));
 end entity main;
 
 architecture behavior of main is
 
+    component debounce is
+        port(SysClock, Button   : in    std_logic;
+             Result             : out   std_logic);
+    end component debounce;
     component counter is
         generic(AddrBits : integer);
         port(Clock, Reset   : in        std_logic;
@@ -39,19 +43,27 @@ architecture behavior of main is
     signal Address : std_logic_vector(AddrBits - 1 downto 0);
     signal Word : std_logic_vector(7 downto 0);
 
+    -- debounced clocks
+    signal NewMemClock, NewPCClock : std_logic;
+
 begin
+
+    DBMEM: debounce
+        port map(SysClock => SysClock, Button => MemClock, Result => NewMemClock);
+    DBPC: debounce
+        port map(SysClock => SysClock, Button => PCClock, Result => NewPCClock);
 
     -- a counter that iterates through the addresses to execute instructions in order
     CT: counter
         generic map(AddrBits => AddrBits)
-        port map(Clock => MemClock, Reset => Reset, DOut => Address);
+        port map(Clock => NewMemClock, Reset => Reset, DOut => Address);
 
     MEM: rom
         generic map(MemFileName => MemFileName, MemDepth => MemDepth, 
                     AddrBits => AddrBits, WordWidth => 8)
-        port map(Clock => MemClock, Address => Address, Word => Word);
+        port map(Clock => NewMemClock, Address => Address, Word => Word);
     PC: proc
-        port map(Clock => PCClock, Reset => Reset, Run => Run, DIn => Word,
+        port map(Clock => NewPCClock, Reset => Reset, Run => Run, DIn => Word,
                  Done => Done, BusWires => BusWires);
 
 end architecture behavior;
