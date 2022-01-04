@@ -7,7 +7,8 @@ entity proc is
     port(Clock, Reset, Run  : in        std_logic;
          DIn                : in        std_logic_vector(7 downto 0);
         --  State              : out       std_logic_vector(3 downto 0);
-         Done               : out       std_logic;
+         Hex0, Hex1         : out       std_logic_vector(7 downto 0);
+         Done               : buffer    std_logic;
          BusWires           : buffer    std_logic_vector(7 downto 0));
 end entity proc;
 
@@ -36,6 +37,11 @@ architecture behavior of proc is
             --  State                                                  : out   std_logic(3 downto 0);
              REn, RSelect                                           : out   std_logic_vector(7 downto 0));
     end component controlunit;
+    component hexdisplay is
+        port(Clock, En      : in    std_logic;
+             DIn            : in    std_logic_vector(3 downto 0);
+             Hex            : out   std_logic_vector(7 downto 0));
+    end component hexdisplay;
 
     signal AddOrSub : std_logic;
 
@@ -92,5 +98,10 @@ begin
                  GSelect => GSelect, AEn => AEn, GEn => GEn, IREn => IREn,
                 --  State => State,
                  REn => REn, RSelect => RSelect);
+
+    HD0: hexdisplay
+        port map(Clock => Clock, En => Done, DIn => BusWires(3 downto 0), Hex => Hex0);
+    HD1: hexdisplay
+        port map(Clock => Clock, En => Done, DIn => BusWires(7 downto 4), Hex => Hex1);
 
 end architecture behavior;

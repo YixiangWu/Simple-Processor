@@ -9,7 +9,7 @@ entity main is
             MemDepth        : integer   := 16);
     port(MemClock, PCClock, Reset, Run, SysClock    : in    std_logic;
          Done                                       : out   std_logic;
-         BusWires                                   : out   std_logic_vector(7 downto 0));
+         BusWires, Hex0, Hex1                       : out   std_logic_vector(7 downto 0));
 end entity main;
 
 architecture behavior of main is
@@ -33,7 +33,8 @@ architecture behavior of main is
     component proc is
         port(Clock, Reset, Run  : in        std_logic;
              DIn                : in        std_logic_vector(7 downto 0);
-             Done               : out       std_logic;
+             Hex0, Hex1         : out       std_logic_vector(7 downto 0);
+             Done               : buffer    std_logic;
              BusWires           : buffer    std_logic_vector(7 downto 0));
     end component proc;
 
@@ -64,6 +65,6 @@ begin
         port map(Clock => NewMemClock, Address => Address, Word => Word);
     PC: proc
         port map(Clock => NewPCClock, Reset => Reset, Run => Run, DIn => Word,
-                 Done => Done, BusWires => BusWires);
+                 Done => Done, Hex0 => Hex0, Hex1 => Hex1, BusWires => BusWires);
 
 end architecture behavior;
